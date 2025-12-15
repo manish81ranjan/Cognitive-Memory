@@ -1,0 +1,1439 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>DEMNET • Premium Alzheimer MRI UI</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script src="https://unpkg.com/@lottiefiles/lottiefiles/lottie-player.js"></script>
+
+  <script src="auth.js"></script>
+
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+
+
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #0b1220;
+      --accent: #06b6d4;
+      --neon: #7c3aed;
+    }
+
+    body {
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(124, 58, 237, 0.06), transparent 6%),
+        radial-gradient(900px 400px at 90% 90%, rgba(6, 182, 212, 0.04), transparent 6%),
+        var(--bg);
+      color: #e6eef8;
+      min-height: 100vh;
+    }
+
+    .glass {
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(6px);
+    }
+
+    .neon {
+      box-shadow: 0 6px 30px rgba(124, 58, 237, 0.12), 0 0 8px rgba(6, 182, 212, 0.06);
+      border-radius: 12px;
+    }
+
+    .magnetic {
+      transition: transform 0.22s cubic-bezier(.2, .9, .2, 1);
+      will-change: transform;
+    }
+
+    .magnetic:active {
+      transform: scale(.98);
+    }
+
+    #toast {
+      position: fixed;
+      right: 20px;
+      bottom: 20px;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .toast-item {
+      background: rgba(0, 0, 0, 0.6);
+      color: #fff;
+      padding: 10px 14px;
+      border-radius: 10px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    }
+
+    #particles {
+      position: fixed;
+      left: 0;
+      top: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+      pointer-events: none;
+      mix-blend-mode: screen;
+      filter: blur(8px) saturate(1.2);
+    }
+
+    @media(max-width:720px) {
+      .desktop-only {
+        display: none
+      }
+
+      .mobile-block {
+        display: block
+      }
+    }
+
+    /* FIX 1: Max specificity for hiding pages */
+    .page.hidden,
+    .hidden-el {
+      display: none !important;
+    }
+
+    .gradcam-overlay {
+      mix-blend-mode: color-dodge;
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+      opacity: 0.6;
+      filter: blur(8px);
+    }
+
+    /* Mobile menu & hamburger (right) */
+    #hamburger {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: 8px;
+    }
+
+    #hamburger span {
+      width: 22px;
+      height: 3px;
+      background: #fff;
+      border-radius: 2px;
+      transition: all 0.35s ease;
+      display: block;
+    }
+
+    #hamburger.active span:nth-child(1) {
+      transform: rotate(45deg) translate(4px, 4px);
+    }
+
+    #hamburger.active span:nth-child(2) {
+      opacity: 0;
+      transform: translateX(-6px);
+    }
+
+    #hamburger.active span:nth-child(3) {
+      transform: rotate(-45deg) translate(4px, -4px);
+    }
+
+    /* mobile nav panel (slides in from right) */
+    .mobile-panel {
+      position: fixed;
+      top: 70px;
+      /* below header */
+      right: -100%;
+      width: 260px;
+      height: calc(100vh - 80px);
+      background: linear-gradient(180deg, rgba(10, 12, 18, 0.98), rgba(8, 10, 14, 0.96));
+      box-shadow: -20px 0 60px rgba(0, 0, 0, 0.6);
+      z-index: 100;
+      /* Increased z-index to ensure it sits above all page content (z-40) */
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: right 0.36s cubic-bezier(.2, .9, .25, 1);
+      border-left: 1px solid rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+    }
+
+    .mobile-panel.open {
+      right: 12px;
+    }
+
+    .mobile-panel a {
+      color: #e6eef8;
+      text-decoration: none;
+      font-weight: 600;
+    }
+
+    .mobile-panel .close-btn {
+      align-self: flex-end;
+      background: transparent;
+      border: 0;
+      color: #bbb;
+      cursor: pointer;
+      padding: 6px;
+    }
+
+    /* small responsive fix for header elements */
+    @media(min-width: 721px) {
+      #hamburger {
+        display: none;
+      }
+
+      .mobile-panel {
+        display: none;
+      }
+    }
+
+    /* Responsive helpers */
+    .container-safe {
+      max-width: 1280px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 1rem;
+      padding-right: 1rem;
+    }
+
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.75rem !important;
+      }
+
+      h2 {
+        font-size: 1.4rem !important;
+      }
+
+      h3 {
+        font-size: 1.1rem !important;
+      }
+    }
+
+    @media (max-width: 768px) {
+      #model .grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* MODEL SECTION RESPONSIVE FIX */
+    @media (max-width: 768px) {
+      #model {
+        padding: 1rem;
+      }
+
+      #model h2 {
+        text-align: center;
+      }
+
+      #model ul {
+        font-size: 0.85rem;
+      }
+
+      #cnnDiagram {
+        justify-content: center;
+      }
+
+      #cnnDiagram>div {
+        width: 72px !important;
+      }
+    }
+
+    /* macOS-style Liquid Glass */
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.14);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      backdrop-filter: blur(18px) saturate(180%);
+      -webkit-backdrop-filter: blur(18px) saturate(180%);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 8px 26px rgba(0, 0, 0, 0.45);
+      border-radius: 14px;
+      transition: all 0.28s cubic-bezier(.2, .9, .25, 1);
+    }
+
+    /* Hover glow */
+    .liquid-glass:hover {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.45),
+        0 0 20px rgba(6, 182, 212, 0.65),
+        0 10px 34px rgba(0, 0, 0, 0.55);
+      transform: translateY(-1px);
+    }
+
+    /* Press feedback */
+    .liquid-glass:active {
+      transform: scale(0.94);
+    }
+
+    #hamburger span {
+      background: linear-gradient(180deg,
+          rgba(255, 255, 255, 0.95),
+          rgba(255, 255, 255, 0.75));
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+    }
+
+    /* macOS Liquid Glass Mobile Panel */
+    .mobile-glass-panel {
+      background: linear-gradient(180deg,
+          rgba(255, 255, 255, 0.18),
+          rgba(255, 255, 255, 0.08));
+      backdrop-filter: blur(28px) saturate(180%);
+      -webkit-backdrop-filter: blur(28px) saturate(180%);
+      border: 1px solid rgba(255, 255, 255, 0.28);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, 0.35),
+        0 30px 80px rgba(0, 0, 0, 0.6);
+      border-radius: 24px;
+    }
+
+    /* Apple-like menu items */
+    .mobile-glass-panel button,
+    .mobile-glass-panel a {
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      backdrop-filter: blur(14px);
+      border-radius: 14px;
+      transition: all 0.25s ease;
+    }
+
+    /* Hover / tap effect */
+    .mobile-glass-panel button:hover,
+    .mobile-glass-panel a:hover {
+      background: rgba(255, 255, 255, 0.18);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.6);
+      transform: translateY(-1px);
+    }
+
+    /* Prevent double close icon */
+    .mobile-close-hidden {
+      display: none !important;
+    }
+
+    /* footer */
+    /* Footer Glass */
+    .footer-glass {
+      @apply bg-white/10 backdrop-blur-xl border border-white/25 rounded-3xl shadow-lg;
+    }
+
+    /* Footer Links */
+    .footer-link {
+      @apply relative text-slate-400 hover:text-teal-400 transition-colors;
+    }
+
+    .footer-link::after {
+      content: '';
+      @apply absolute left-0 bottom-0 h-[1px] w-0 bg-gradient-to-r from-teal-400 to-purple-700 transition-all;
+    }
+
+    .footer-link:hover::after {
+      @apply w-full;
+    }
+
+    /* Social buttons */
+    .social-btn {
+      @apply w-10 h-10 flex items-center justify-center rounded-xl bg-white/10 border border-white/20 text-slate-200 transition-all;
+    }
+
+    .social-btn:hover {
+      @apply bg-white/20 shadow-lg -translate-y-1;
+    }
+  </style>
+</head>
+
+<body>
+
+  <canvas id="particles"></canvas>
+
+  <header class="fixed top-4 left-4 right-4 z-50 flex items-center justify-between gap-4">
+    <!-- LOGO -->
+    <a href="#home" class="flex items-center gap-3">
+      <div class="p-2 rounded-lg bg-white/5 backdrop-blur-md border border-white/10 flex items-center gap-3">
+
+        <!-- Logo Icon Box -->
+        <div class="w-10 h-10 rounded bg-gradient-to-br from-indigo-500 to-teal-400 
+                flex items-center justify-center shadow-lg">
+          <img src="image 1.jpg" class="w-10 h-10 rounded object-cover" />
+          <path d="M5 12h14" stroke="#fff" stroke-width="1.5" stroke-linecap="round" />
+          </svg>
+        </div>
+
+        <!-- Logo Text -->
+        <div class="leading-tight">
+          <div class="text-white font-semibold tracking-wide">DEMNET MRI</div>
+          <div class="text-[11px] text-slate-300">Cognitive Memory Analysis</div>
+        </div>
+      </div>
+    </a>
+
+
+    <nav class="hidden md:flex items-center gap-3">
+      <button class="px-3 py-2 rounded-md magnetic glass" data-target="home">Home</button>
+      <button class="px-3 py-2 rounded-md magnetic glass" data-target="upload">Upload</button>
+      <button class="px-3 py-2 rounded-md magnetic glass" data-target="model">Model</button>
+      <button class="px-3 py-2 rounded-md magnetic glass" data-target="dashboard">Dashboard</button>
+
+      <!-- Profile / Signup Page Link -->
+      <a href="/signup" class="px-3 py-2 rounded-md magnetic glass">
+        <i class="fa-solid fa-user"></i>
+      </a>
+
+      <div class="ml-3 flex items-center gap-2">
+        <button id="chatBtn" class="px-3 py-2 rounded glass magnetic">Chat</button>
+      </div>
+    </nav>
+
+    <div id="hamburger" class="md:hidden liquid-glass w-11 h-11 flex items-center justify-center" aria-label="Open menu"
+      title="Menu">
+      <div class="flex flex-col gap-[5px]">
+        <span></span>
+        <span></span>
+        <span></span>
+      </div>
+    </div>
+
+  </header>
+
+
+  <div id="mobileMenu" class="fixed inset-0 z-50 hidden flex items-start justify-center pt-20">
+
+    <div class="mobile-glass-panel w-[92%] max-w-sm p-6 relative">
+
+      <!-- CLOSE BUTTON -->
+      <!-- <button id="mobileCloseBtn"
+        class="absolute top-4 right-4 liquid-glass w-10 h-10 flex items-center justify-center text-xl">
+        ✕
+      </button> -->
+
+      <!-- MENU ITEMS -->
+      <nav class="flex flex-col gap-4 mt-8 text-center">
+
+        <button data-target="home" class="px-4 py-3 text-white font-medium">
+          Home
+        </button>
+
+        <button data-target="upload" class="px-4 py-3 text-white font-medium">
+          Upload
+        </button>
+
+        <button data-target="model" class="px-4 py-3 text-white font-medium">
+          Model
+        </button>
+
+        <button data-target="dashboard" class="px-4 py-3 text-white font-medium">
+          Dashboard
+        </button>
+
+        <a href="profile.html" class="px-4 py-3 text-white font-medium">
+          Profile
+        </a>
+
+        <button id="chatBtnMobile" class="px-4 py-3 font-semibold text-teal-300">
+          Chat
+        </button>
+
+      </nav>
+
+    </div>
+  </div>
+
+
+  <main class="relative z-40 pt-28 pb-14 max-w-7xl mx-auto px-6">
+
+    <section id="home" class="page glass neon p-6 rounded-2xl mb-8">
+      <div class="grid md:grid-cols-2 gap-6 items-center">
+        <div>
+          <h1 class="text-4xl font-extrabold">Cognitive Memory Analysis — <span class="text-teal-300">DEMNET</span></h1>
+          <p class="mt-3 text-slate-300 max-w-xl">MRI-based Alzheimer’s dementia classification with explainability
+            (Grad-CAM), 3D visualizations and an interactive dashboard — ideal for a final-year demonstration or
+            research prototype.</p>
+
+          <div class="mt-6 flex gap-3">
+            <button
+              class="bg-gradient-to-r from-teal-400 to-indigo-500 px-5 py-3 rounded-lg text-black font-semibold magnetic"
+              data-target="upload">Upload MRI</button>
+            <button class="px-5 py-3 rounded-lg border border-white/10 glass magnetic" data-target="dashboard">View
+              Dashboard</button>
+          </div>
+
+          <div class="mt-6 grid grid-cols-3 gap-3">
+            <div class="p-4 glass rounded-lg">
+              <div class="text-xs text-slate-300">Accuracy</div>
+              <div class="text-2xl font-bold" id="countAcc">—</div>
+            </div>
+            <div class="p-4 glass rounded-lg">
+              <div class="text-xs text-slate-300">AUC</div>
+              <div class="text-2xl font-bold" id="countAuc">—</div>
+            </div>
+            <div class="p-4 glass rounded-lg">
+              <div class="text-xs text-slate-300">F1</div>
+              <div class="text-2xl font-bold" id="countF1">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative">
+          <div id="threeCube" class="w-full h-80 rounded-xl overflow-hidden"></div>
+          <lottie-player src="https://assets6.lottiefiles.com/packages/lf20_1pxqjqps.json" background="transparent"
+            speed="1" style="width:60px;height:60px;" loop autoplay></lottie-player>
+          <!-- <div class="absolute -bottom-8 left-6 glass rounded-lg p-3 shadow-lg flex items-center gap-3">
+            
+            <div>
+              <div class="text-sm text-slate-200">Interactive Brain</div>
+              <div class="text-xs text-slate-400">Rotate • Zoom • Inspect</div>
+            </div>
+          </div> -->
+        </div>
+      </div>
+    </section>
+
+    <!-- UPLOAD / MULTI-SLICE -->
+    <section id="upload" class="page hidden glass neon p-6 rounded-2xl mb-8">
+      <div class="grid md:grid-cols-2 gap-6">
+        <div>
+          <h2 class="text-2xl font-bold">Upload MRI Series (multi-image)</h2>
+          <p class="mt-2 text-slate-300">Select multiple slices (png/jpg). Use the slice player to animate the volume.
+            For production, wire `/predict` to your backend.</p>
+
+          <div class="mt-4">
+            <input id="fileMulti" type="file" accept="image/*" multiple class="block w-full p-2 rounded-md glass" />
+          </div>
+
+          <div class="mt-4 grid grid-cols-2 gap-2">
+            <button id="analyzeAll"
+              class="px-4 py-2 rounded-md bg-gradient-to-r from-teal-400 to-indigo-500 text-black magnetic">Analyze
+              Series</button>
+            <button id="downloadReport" class="px-4 py-2 rounded-md border glass magnetic">Download PDF</button>
+          </div>
+
+          <div class="mt-4 glass p-3 rounded-lg">
+            <div id="predSummary" class="hidden">
+              <div class="text-sm text-slate-300">Prediction:</div>
+              <div class="text-lg font-bold text-teal-300" id="predLabel">—</div>
+              <div class="mt-2 text-xs text-slate-400" id="probList"></div>
+              <div class="mt-3 flex gap-2">
+                <button id="downloadPrediction" class="px-3 py-1 rounded glass magnetic">Download Image</button>
+                <button id="showGrad" class="px-3 py-1 rounded glass magnetic">Show Grad-CAM</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold">Slice Player & Grad-CAM</h3>
+
+          <div class="mt-3 relative bg-black/30 rounded-lg overflow-hidden flex items-center justify-center"
+            style="height:360px;">
+            <canvas id="sliceCanvas" style="max-width:100%; max-height:100%"></canvas>
+            <canvas id="gradCanvas" class="gradcam-overlay hidden-el"></canvas>
+          </div>
+
+          <div class="mt-3 flex items-center gap-2">
+            <button id="prevBtn" class="px-3 py-1 rounded glass magnetic">Prev</button>
+            <input id="sliceSlider" type="range" min="0" max="0" value="0" class="flex-1" />
+            <button id="nextBtn" class="px-3 py-1 rounded glass magnetic">Next</button>
+          </div>
+
+          <div class="mt-3 flex gap-2">
+            <button id="playBtn" class="px-3 py-1 rounded bg-teal-400 text-black magnetic">Play</button>
+            <button id="stopBtn" class="px-3 py-1 rounded glass magnetic">Stop</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="model" class="page hidden glass neon p-6 rounded-2xl mb-8 overflow-visible">
+      <h2 class="text-2xl font-bold mb-4">DEMNET Architecture</h2>
+
+      <div class="grid lg:grid-cols-2 gap-6">
+
+        <!-- LEFT: TEXT -->
+        <div class="space-y-4 text-slate-300 text-sm leading-relaxed">
+
+          <p>
+            DEMNET is a CNN-based deep learning architecture designed to classify
+            Alzheimer’s disease stages from MRI scans.
+          </p>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <div class="glass p-4 rounded-lg">
+              <div class="text-xs text-slate-400">Input</div>
+              <div class="font-semibold text-white">MRI Slices</div>
+            </div>
+
+            <div class="glass p-4 rounded-lg">
+              <div class="text-xs text-slate-400">Optimizer</div>
+              <div class="font-semibold text-white">Adam</div>
+            </div>
+
+            <div class="glass p-4 rounded-lg">
+              <div class="text-xs text-slate-400">Loss</div>
+              <div class="font-semibold text-white">Categorical CE</div>
+            </div>
+
+            <div class="glass p-4 rounded-lg">
+              <div class="text-xs text-slate-400">Output</div>
+              <div class="font-semibold text-white">ND • VMD • MID • MOD</div>
+            </div>
+          </div>
+
+          <div class="glass p-4 rounded-lg">
+            <div class="font-semibold text-white mb-1">Core Layers</div>
+            <ul class="list-disc ml-5 space-y-1">
+              <li>Convolution (3×3)</li>
+              <li>Batch Normalization</li>
+              <li>ReLU Activation</li>
+              <li>Max Pooling</li>
+              <li>Global Average Pooling</li>
+              <li>Dense + Softmax</li>
+            </ul>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: VISUAL FLOW -->
+        <div class="flex flex-col gap-3 items-center">
+
+          <div class="glass p-3 rounded-lg w-full max-w-xs text-center">
+            MRI Input
+          </div>
+          <span class="text-slate-400">↓</span>
+
+          <div class="glass p-3 rounded-lg w-full max-w-xs text-center">
+            DEM Blocks (CNN)
+          </div>
+          <span class="text-slate-400">↓</span>
+
+          <div class="glass p-3 rounded-lg w-full max-w-xs text-center">
+            Global Avg Pooling
+          </div>
+          <span class="text-slate-400">↓</span>
+
+          <div class="glass p-3 rounded-lg w-full max-w-xs text-center text-teal-300">
+            Softmax Classification
+          </div>
+
+          <div class="text-xs text-slate-400 mt-1">
+            ND • VMD • MID • MOD
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- CNN ANIMATION -->
+      <div class="mt-6">
+        <h3 class="text-lg font-semibold mb-2">Animated CNN Diagram</h3>
+        <div id="cnnDiagram" class="flex flex-wrap gap-3 justify-center"></div>
+      </div>
+    </section>
+
+
+    <!-- DASHBOARD -->
+    <section id="dashboard" class="page hidden glass neon p-6 rounded-2xl mb-8">
+      <h2 class="text-2xl font-bold">Training Dashboard</h2>
+      <div class="mt-4 grid md:grid-cols-3 gap-4">
+        <div class="glass p-4 rounded-lg">
+          <div class="text-xs text-slate-300">Train Loss</div>
+          <canvas id="chartLoss"></canvas>
+        </div>
+        <div class="glass p-4 rounded-lg">
+          <div class="text-xs text-slate-300">Val Accuracy</div>
+          <canvas id="chartAcc"></canvas>
+        </div>
+        <div class="glass p-4 rounded-lg">
+          <div class="text-xs text-slate-300">Class Distribution</div>
+          <canvas id="chartDist"></canvas>
+        </div>
+      </div>
+
+      <div class="mt-6 glass p-4 rounded-lg">
+        <div class="text-xs text-slate-300">Confusion Matrix</div>
+        <div id="confMatrix" class="mt-3 grid grid-cols-4 gap-2"></div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- CHATBOT (floating) -->
+  <div id="chatbot"
+    class="fixed right-6 bottom-6 w-80 bg-gradient-to-br from-slate-900 to-slate-800 glass p-3 rounded-xl shadow-lg hidden z-50">
+    <div class="flex items-center justify-between">
+      <div class="text-white font-semibold">DEMNET Assistant</div>
+      <button id="closeChat" class="text-slate-300">✕</button>
+    </div>
+    <div id="chatBody" class="mt-3 max-h-48 overflow-y-auto text-sm space-y-2">
+      <div class="text-slate-400">Ask me about dataset, model or explainability — this is a mock assistant.</div>
+    </div>
+    <div class="mt-3 flex gap-2">
+      <input id="chatInput" class="flex-1 p-2 rounded bg-black/10 text-white text-sm"
+        placeholder="Type a question..." />
+      <button id="sendChat" class="px-3 py-2 rounded bg-teal-400 text-black">Send</button>
+    </div>
+  </div>
+
+  <!-- TOASTS -->
+  <div id="toast"></div>
+
+  <!-- FOOTER -->
+  <!-- FOOTER SEPARATOR -->
+  <div class="relative z-30 mt-24">
+    <!-- Soft fade-out -->
+    <div class="h-24 bg-gradient-to-b from-transparent to-black/40"></div>
+
+    <!-- Glass divider line -->
+    <!-- <div class="mx-auto max-w-7xl px-6">
+    <div class="h-[1px] bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+  </div> -->
+  </div>
+
+
+  <footer class="relative z-40 w-full">
+    <!-- Interactive 3D Background -->
+    <canvas id="footer-bg" class="absolute inset-0 w-full h-full -z-10"></canvas>
+
+    <!-- Footer content -->
+    <div class="mx-auto max-w-7xl px-6 py-12 lg:py-16">
+      <div class="grid md:grid-cols-4 gap-8 text-sm text-slate-300">
+
+        <!-- Brand -->
+        <div>
+          <h2 class="text-white font-bold text-lg">DEMNET</h2>
+          <p class="mt-2 text-slate-400 leading-relaxed">
+            Intelligent MRI-based cognitive analysis platform delivering
+            deep learning–driven insights through advanced visualization
+            and explainable AI.
+          </p>
+        </div>
+
+        <!-- Navigation -->
+        <div>
+          <div class="text-white font-semibold mb-2">
+            Navigation
+          </div>
+          <ul class="space-y-1">
+            <li><a href="#home" data-target="home" class="footer-link">Home</a></li>
+            <li><a href="#upload" data-target="upload" class="footer-link">Upload</a></li>
+            <li><a href="#model" data-target="model" class="footer-link">Model</a></li>
+            <li><a href="#dashboard" data-target="dashboard" class="footer-link">Dashboard</a></li>
+          </ul>
+        </div>
+
+        <!-- Platform -->
+        <div>
+          <h3 class="text-white font-semibold mb-3">Platform</h3>
+          <ul class="space-y-2">
+            <li>MRI Image Processing</li>
+            <li>Deep Learning Models</li>
+            <li>Explainable AI (Grad-CAM)</li>
+            <li>Interactive Analytics</li>
+          </ul>
+        </div>
+
+        <!-- Social -->
+        <div>
+          <h3 class="text-white font-semibold mb-3">Connect</h3>
+          <div style="font-size: x-large;" class="flex gap-3 mt-2">
+            <a href="#" class="social-btn" aria-label="Twitter">
+              <i class="fa-brands fa-x-twitter"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="LinkedIn">
+              <i class="fa-brands fa-linkedin-in"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="GitHub">
+              <i class="fa-brands fa-github"></i>
+            </a>
+            <a href="#" class="social-btn" aria-label="YouTube">
+              <i class="fa-brands fa-youtube"></i>
+            </a>
+          </div>
+          <p class="mt-3 text-xs text-slate-400">
+            Follow updates, platform enhancements, and research insights.
+          </p>
+        </div>
+
+      </div>
+
+      <!-- Bottom Bar -->
+      <div
+        class="mt-12 pt-6 border-t border-white/20 flex flex-col md:flex-row justify-between items-center text-xs text-slate-400 gap-3">
+        <p>© 2025 DEMNET. All rights reserved.</p>
+        <div class="flex items-center gap-4">
+          <a href="#" class="footer-link">Privacy</a>
+          <a href="#" class="footer-link">Terms</a>
+          <a href="#" class="footer-link">Security</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+
+
+
+
+  <script>
+    /* ---------------------------
+        Helpers: toast
+    --------------------------- */
+    function toast(msg, ttl = 3000) {
+      const t = document.createElement('div'); t.className = 'toast-item';
+      t.innerText = msg; document.getElementById('toast').appendChild(t);
+      setTimeout(() => t.remove(), ttl);
+    }
+
+    /* ---------------------------
+        Particles background
+    --------------------------- */
+    const pCanvas = document.getElementById('particles');
+    const pCtx = pCanvas.getContext('2d');
+    function resizeParticles() { pCanvas.width = innerWidth; pCanvas.height = innerHeight; }
+    resizeParticles(); window.addEventListener('resize', resizeParticles);
+    const particles = Array.from({ length: 150 }).map(() => ({
+      x: Math.random() * innerWidth, y: Math.random() * innerHeight,
+      r: Math.random() * 2 + 0.5, vx: (Math.random() - 0.5) * 0.3, vy: (Math.random() - 0.5) * 0.3,
+      hue: 180 + Math.random() * 120
+    }));
+    function drawParticles() {
+      pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+      particles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < -10) p.x = innerWidth + 10; if (p.x > innerWidth + 10) p.x = -10;
+        if (p.y < -10) p.y = innerHeight + 10; if (p.y > innerHeight + 10) p.y = -10;
+        const g = pCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 8);
+        g.addColorStop(0, `hsla(${p.hue},80%,60%,0.12)`); g.addColorStop(1, 'rgba(255,255,255,0)');
+        pCtx.fillStyle = g; pCtx.beginPath(); pCtx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2); pCtx.fill();
+      });
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
+
+    /* ---------------------------
+        Page nav (desktop buttons and mobile links)
+    --------------------------- */
+    function showPage(id) {
+      // Ensure all pages are hidden before showing the target page
+      document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+      const el = document.getElementById(id);
+      if (el) el.classList.remove('hidden');
+      gsap.from("#" + id, { duration: 0.6, y: 20, opacity: 0, ease: "power3.out" });
+    }
+    document.querySelectorAll('[data-target]').forEach(btn => {
+      btn.addEventListener('click', () => showPage(btn.dataset.target));
+    });
+    showPage('home');
+
+    /* ---------------------------
+        Magnetic hover
+    --------------------------- */
+    document.querySelectorAll('.magnetic').forEach(el => {
+      el.addEventListener('mousemove', (e) => {
+        const rect = el.getBoundingClientRect();
+        const dx = (e.clientX - (rect.left + rect.width / 2)) / rect.width * 12;
+        const dy = (e.clientY - (rect.top + rect.height / 2)) / rect.height * 12;
+        el.style.transform = `translate(${dx}px, ${dy}px) scale(1.02)`;
+      });
+      el.addEventListener('mouseleave', () => el.style.transform = '');
+    });
+
+    /* ---------------------------
+        Counters animation
+    --------------------------- */
+    function animateCount(id, to, duration = 1000) {
+      const el = document.getElementById(id);
+      let startTime = null;
+      function step(ts) {
+        if (!startTime) startTime = ts;
+        const progress = Math.min((ts - startTime) / duration, 1);
+        el.innerText = Math.round(progress * to);
+        if (progress < 1) requestAnimationFrame(step);
+      }
+      requestAnimationFrame(step);
+    }
+    setTimeout(() => { animateCount('countAcc', 92); animateCount('countAuc', 88); animateCount('countF1', 85); }, 800);
+
+    /* ---------------------------
+        Slice player (canvas)
+    --------------------------- */
+    let slices = [];
+    const sliceCanvas = document.getElementById('sliceCanvas');
+    const sCtx = sliceCanvas.getContext('2d');
+    const gradCanvas = document.getElementById('gradCanvas');
+    const gCtx = gradCanvas.getContext('2d');
+    let currentIndex = 0, playTimer = null;
+
+    function resizeCanvasToParent() {
+      const box = sliceCanvas.parentElement.getBoundingClientRect();
+      sliceCanvas.width = box.width; sliceCanvas.height = box.height;
+      gradCanvas.width = box.width; gradCanvas.height = box.height;
+    }
+    resizeCanvasToParent();
+    window.addEventListener('resize', resizeCanvasToParent);
+
+    document.getElementById('fileMulti').addEventListener('change', async (e) => {
+      const files = Array.from(e.target.files).slice(0, 40);
+      if (files.length === 0) return toast('No files selected');
+      toast('Loading slices...');
+      slices = [];
+      for (const f of files) {
+        const img = new Image();
+        img.src = URL.createObjectURL(f);
+        await img.decode();
+        slices.push(img);
+      }
+      document.getElementById('sliceSlider').max = Math.max(0, slices.length - 1);
+      currentIndex = 0; drawSlice();
+      toast('Slices loaded', 1200);
+    });
+
+    function drawSlice(index = currentIndex) {
+      if (!slices.length) {
+        sCtx.clearRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        sCtx.fillStyle = 'rgba(255,255,255,0.02)'; sCtx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        return;
+      }
+      const img = slices[index];
+      const scale = Math.max(sliceCanvas.width / img.width, sliceCanvas.height / img.height);
+      const w = img.width * scale, h = img.height * scale;
+      const x = (sliceCanvas.width - w) / 2, y = (sliceCanvas.height - h) / 2;
+      sCtx.clearRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+      sCtx.drawImage(img, x, y, w, h);
+
+      // mock gradcam overlay
+      gCtx.clearRect(0, 0, gradCanvas.width, gradCanvas.height);
+      const t = Date.now() / 600;
+      for (let i = 0; i < 4; i++) {
+        const gx = gradCanvas.width * (0.2 + Math.abs(Math.sin(t + (i * 1.3))) * 0.6);
+        const gy = gradCanvas.height * (0.2 + Math.abs(Math.cos(t + (i * 0.9))) * 0.6);
+        const rad = Math.min(gradCanvas.width, gradCanvas.height) * (0.12 + 0.12 * Math.abs(Math.sin(t + i)));
+        const g = gCtx.createRadialGradient(gx, gy, 0, gx, gy, rad);
+        g.addColorStop(0, 'rgba(255,40,40,0.6)'); g.addColorStop(1, 'rgba(255,40,40,0)');
+        gCtx.fillStyle = g; gCtx.beginPath(); gCtx.arc(gx, gy, rad, 0, Math.PI * 2); gCtx.fill();
+      }
+      gradCanvas.style.opacity = 0.5;
+      gradCanvas.classList.remove('hidden-el');
+
+      document.getElementById('sliceSlider').value = index;
+      currentIndex = index;
+    }
+
+    document.getElementById('sliceSlider').addEventListener('input', (e) => drawSlice(+e.target.value));
+    document.getElementById('prevBtn').addEventListener('click', () => drawSlice(Math.max(0, currentIndex - 1)));
+    document.getElementById('nextBtn').addEventListener('click', () => drawSlice(Math.min(slices.length - 1, currentIndex + 1)));
+    document.getElementById('playBtn').addEventListener('click', () => {
+      if (playTimer) return; playTimer = setInterval(() => { drawSlice((currentIndex + 1) % slices.length); }, 220);
+    });
+    document.getElementById('stopBtn').addEventListener('click', () => { clearInterval(playTimer); playTimer = null; });
+
+    /* ---------------------------
+        Mock analyze & download
+    --------------------------- */
+    document.getElementById('analyzeAll').addEventListener('click', async () => {
+      if (!slices.length) {
+        toast('Load slices first');
+        return;
+      }
+
+      toast('Analyzing MRI using DEMNET model...');
+
+      const fileInput = document.getElementById('fileMulti');
+      const file = fileInput.files[0];
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      // ✅ CALL FLASK BACKEND
+      const res = await fetch("http://127.0.0.1:5000/predict", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      document.getElementById('predLabel').innerText = data.label;
+
+      const p = data.probs;
+      document.getElementById('probList').innerText =
+        `ND:${(p[0] * 100).toFixed(1)}% • 
+     VMD:${(p[1] * 100).toFixed(1)}% • 
+     MID:${(p[2] * 100).toFixed(1)}% • 
+     MOD:${(p[3] * 100).toFixed(1)}%`;
+
+      document.getElementById('predSummary').classList.remove('hidden');
+
+      // Grad-CAM image
+      const img = new Image();
+      img.onload = () => {
+        gCtx.clearRect(0, 0, gradCanvas.width, gradCanvas.height);
+        gCtx.drawImage(img, 0, 0, gradCanvas.width, gradCanvas.height);
+        gradCanvas.classList.remove('hidden-el');
+      };
+      img.src = "data:image/png;base64," + data.gradcam;
+
+      toast('Analysis complete');
+    });
+
+
+
+    document.getElementById('downloadPrediction').addEventListener('click', async () => {
+      if (!slices.length) return toast('No image to download');
+      const blob = await new Promise(res => sliceCanvas.toBlob(res, 'image/png'));
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = 'prediction.png'; a.click(); URL.revokeObjectURL(url);
+      toast('Downloaded prediction image');
+    });
+
+    /* ---------------------------
+        PDF report using jsPDF
+    --------------------------- */
+    document.getElementById('downloadReport').addEventListener('click', async () => {
+      if (!slices.length) return toast('No slices to report');
+      toast('Generating PDF report...');
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'px', format: [612, 792] });
+      doc.setFontSize(16); doc.text('DEMNET — MRI Analysis Report', 40, 40);
+      doc.setFontSize(12); doc.text(`Patient: Demo • Date: ${new Date().toLocaleString()}`, 40, 70);
+      await html2canvas(sliceCanvas.parentElement, { background: '#0f172a' }).then(canvas => {
+        const imgData = canvas.toDataURL('image/png');
+        doc.addImage(imgData, 'PNG', 40, 100, 520, 300);
+      });
+      doc.text('Prediction: ' + (document.getElementById('predLabel').innerText || '—'), 40, 420);
+      doc.save('demnet_report.pdf');
+      toast('PDF saved');
+    });
+
+    /* ---------------------------
+        Charts (Chart.js)
+    --------------------------- */
+    (function mkCharts() {
+      const loss = document.getElementById('chartLoss').getContext('2d');
+      new Chart(loss, { type: 'line', data: { labels: ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'], datasets: [{ label: 'Train Loss', data: [1.2, 0.95, 0.8, 0.6, 0.43, 0.32, 0.28, 0.24], borderColor: '#7c3aed', backgroundColor: 'rgba(124,58,237,0.12)', fill: true }] }, options: { plugins: { legend: { display: false } }, responsive: true } });
+
+      const acc = document.getElementById('chartAcc').getContext('2d');
+      new Chart(acc, { type: 'line', data: { labels: ['E1', 'E2', 'E3', 'E4', 'E5', 'E6', 'E7', 'E8'], datasets: [{ label: 'Val Accuracy', data: [0.62, 0.7, 0.76, 0.82, 0.86, 0.88, 0.9, 0.92], borderColor: '#06b6d4', backgroundColor: 'rgba(6,182,212,0.12)', fill: true }] }, options: { plugins: { legend: { display: false } } } });
+
+      const dist = document.getElementById('chartDist').getContext('2d');
+      new Chart(dist, { type: 'doughnut', data: { labels: ['ND', 'VMD', 'MID', 'MOD'], datasets: [{ data: [180, 80, 120, 40], backgroundColor: ['#60a5fa', '#7dd3fc', '#93c5fd', '#7c3aed'] }] }, options: { plugins: { legend: { position: 'bottom' } } } });
+
+      // confusion matrix
+      const cm = [[160, 12, 18, 10], [8, 60, 9, 3], [10, 14, 95, 1], [2, 1, 4, 33]];
+      const cmDiv = document.getElementById('confMatrix'); cmDiv.innerHTML = '';
+      cm.forEach(row => row.forEach(v => {
+        const d = document.createElement('div'); d.className = 'glass p-3 rounded'; d.innerHTML = `<div class="text-sm text-slate-300"> ${v} </div>`; cmDiv.appendChild(d);
+      }));
+    })();
+
+    /* ---------------------------
+        Animated CNN diagram (simple)
+    --------------------------- */
+    (function cnnAnim() {
+      const el = document.getElementById('cnnDiagram');
+      for (let i = 0; i < 6; i++) {
+        const block = document.createElement('div');
+        block.className = 'p-3 rounded-lg glass flex flex-col items-center gap-1';
+        block.style.width = (80 - i * 8) + 'px';
+        block.innerHTML = `<div class="text-xs text-slate-300">Block ${i + 1}</div><div class="text-sm font-semibold">DEM</div>`;
+        el.appendChild(block);
+        gsap.from(block, { y: 20, opacity: 0, delay: i * 0.08, duration: 0.5, ease: 'power3.out' });
+      }
+    })();
+
+    /* ---------------------------
+        Chatbot mock
+    --------------------------- */
+    document.getElementById('chatBtn').addEventListener('click', () => document.getElementById('chatbot').classList.toggle('hidden'));
+    document.getElementById('closeChat').addEventListener('click', () => document.getElementById('chatbot').classList.add('hidden'));
+    document.getElementById('sendChat').addEventListener('click', sendChat);
+    document.getElementById('chatInput').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendChat(); });
+    document.getElementById('chatBtnMobile')?.addEventListener('click', () => document.getElementById('chatbot').classList.toggle('hidden'));
+
+    function sendChat() {
+      const input = document.getElementById('chatInput'); const val = input.value.trim(); if (!val) return;
+      const body = document.getElementById('chatBody');
+      const user = document.createElement('div'); user.className = 'text-right text-xs text-teal-300'; user.innerText = 'You: ' + val; body.appendChild(user);
+      input.value = ''; body.scrollTop = body.scrollHeight;
+      setTimeout(() => {
+        const bot = document.createElement('div'); bot.className = 'text-left text-sm text-slate-200';
+        bot.innerText = `Assistant: This is a demo. For "${val}" you could: 1) check dataset stats 2) view Grad-CAM or 3) run training.`;
+        body.appendChild(bot); body.scrollTop = body.scrollHeight;
+      }, 700);
+    }
+
+    /* ---------------------------
+        Mobile menu toggle (hamburger) - FIX 2: JS logic updated for overlay
+    --------------------------- */
+    /* ---------------------------
+   Mobile menu toggle (FIXED)
+--------------------------- */
+    // const hamburger = document.getElementById('hamburger');
+    // const mobileMenu = document.getElementById('mobileMenu');
+    // const mobileCloseBtn = document.getElementById('mobileCloseBtn');
+
+    // hamburger.addEventListener('click', () => {
+    //   mobileMenu.classList.remove('hidden');
+    // });
+
+    // mobileCloseBtn.addEventListener('click', () => {
+    //   mobileMenu.classList.add('hidden');
+    // });
+    const hamburger = document.getElementById('hamburger');
+    const mobileMenu = document.getElementById('mobileMenu');
+
+    hamburger.addEventListener('click', () => {
+      const isOpen = hamburger.classList.contains('active');
+
+      if (isOpen) {
+        // CLOSE
+        hamburger.classList.remove('active');
+        mobileMenu.classList.add('hidden');
+      } else {
+        // OPEN
+        hamburger.classList.add('active');
+        mobileMenu.classList.remove('hidden');
+      }
+    });
+
+    /* Close menu when clicking any item */
+    mobileMenu.querySelectorAll('[data-target], a, button').forEach(item => {
+      item.addEventListener('click', () => {
+        hamburger.classList.remove('active');
+        mobileMenu.classList.add('hidden');
+      });
+    });
+
+    /* Close when clicking outside panel */
+    mobileMenu.addEventListener('click', (e) => {
+      if (e.target === mobileMenu) {
+        hamburger.classList.remove('active');
+        mobileMenu.classList.add('hidden');
+      }
+    });
+
+    /* Close menu when clicking a menu item */
+    // mobileMenu.querySelectorAll('[data-target], a').forEach(item => {
+    //   item.addEventListener('click', () => {
+    //     mobileMenu.classList.add('hidden');
+    //   });
+    // });
+
+
+    // mobileCloseBtn.addEventListener('click', () => {
+    //   hamburger.classList.remove('active');
+    //   mobilePanel.classList.remove('open');
+    //   mobilePanel.setAttribute('aria-hidden', 'true');
+
+    //   // FIX: Hide the overlay when closing
+    //   mobileOverlay.classList.add('hidden');
+    //   mobileOverlay.setAttribute('aria-hidden', 'true');
+    // });
+
+    // close when clicking mobile link and navigate
+    // document.querySelectorAll('.mobile-link').forEach(a => {
+    //   a.addEventListener('click', (e) => {
+    //     e.preventDefault();
+    //     const target = a.dataset.target;
+    //     hamburger.classList.remove('active');
+    //     mobilePanel.classList.remove('open');
+    //     mobilePanel.setAttribute('aria-hidden', 'true');
+
+    //     // FIX: Hide the overlay on link click
+    //     mobileOverlay.classList.add('hidden');
+    //     mobileOverlay.setAttribute('aria-hidden', 'true');
+
+    //     showPage(target);
+    //   });
+    // });
+
+    /* ---------------------------
+        Keyboard: quick nav (1-home 2-upload 3-model 4-dash)
+    --------------------------- */
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') showPage('home'); if (e.key === '2') showPage('upload'); if (e.key === '3') showPage('model'); if (e.key === '4') showPage('dashboard');
+    });
+
+    /* ---------------------------
+        Fetch metrics (optional)
+    --------------------------- */
+    (async function fetchMetrics() {
+      try {
+        const res = await fetch('/metrics'); if (!res.ok) throw 0;
+        const d = await res.json();
+        document.getElementById('countAcc').innerText = d.acc || '—';
+        document.getElementById('countAuc').innerText = d.auc || '—';
+        document.getElementById('countF1').innerText = d.f1 || '—';
+      } catch (e) {
+        // keep animated mock values
+      }
+    })();
+
+    toast('Premium DEMNET frontend loaded — all features enabled', 4200);
+
+    /* ---------------------------
+        Three.js: Interactive 3D Brain + Neurons
+        - Simple mouse/touch drag to rotate
+        - Wheel to zoom
+    --------------------------- */
+    (function () {
+      const container = document.getElementById('threeCube');
+      if (!container) return;
+
+      const W = container.clientWidth, H = container.clientHeight;
+      const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(W, H); renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setClearColor(0x000000, 0); // transparent
+      container.appendChild(renderer.domElement);
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(45, W / H, 0.1, 1000);
+      camera.position.set(0, 0, 8);
+
+      // lights
+      scene.add(new THREE.AmbientLight(0xffffff, 0.25));
+      const pLight = new THREE.PointLight(0x7c3aed, 1.25, 40);
+      pLight.position.set(6, 6, 6);
+      scene.add(pLight);
+
+      // Brain (icosahedron + smooth displacement)
+      const brainGeo = new THREE.IcosahedronGeometry(2.6, 3);
+      // subtle vertex noise to look organic
+      for (let i = 0; i < brainGeo.attributes.position.count; i++) {
+        const v = new THREE.Vector3().fromBufferAttribute(brainGeo.attributes.position, i);
+        const n = 1 + (Math.random() - 0.5) * 0.06;
+        v.multiplyScalar(n);
+        brainGeo.attributes.position.setXYZ(i, v.x, v.y, v.z);
+      }
+      brainGeo.computeVertexNormals();
+
+      const brainMat = new THREE.MeshStandardMaterial({
+        color: 0x7c3aed,
+        transparent: true,
+        opacity: 0.12,
+        roughness: 0.6,
+        metalness: 0.25,
+        wireframe: true
+      });
+      const brain = new THREE.Mesh(brainGeo, brainMat);
+      scene.add(brain);
+
+      // neuron group
+      const neuronsGroup = new THREE.Group();
+      scene.add(neuronsGroup);
+
+      const neuronCount = 140;
+      const neuronGeo = new THREE.SphereGeometry(0.055, 8, 8);
+      for (let i = 0; i < neuronCount; i++) {
+        const phi = Math.acos(2 * Math.random() - 1);
+        const theta = 2 * Math.PI * Math.random();
+        const r = 2.1 + Math.random() * 0.35;
+        const x = r * Math.sin(phi) * Math.cos(theta);
+        const y = r * Math.sin(phi) * Math.sin(theta);
+        const z = r * Math.cos(phi);
+        const mat = new THREE.MeshStandardMaterial({
+          emissive: 0x06b6d4,
+          emissiveIntensity: 1,
+          color: 0x052b2f,
+          roughness: 0.2,
+          metalness: 0.1
+        });
+        const m = new THREE.Mesh(neuronGeo, mat);
+        m.position.set(x, y, z);
+        // attach a random seed for pulsation
+        m.userData.seed = Math.random() * 10;
+        neuronsGroup.add(m);
+      }
+
+      // sparse connections
+      const connections = new THREE.Group();
+      scene.add(connections);
+      const neuronMeshes = neuronsGroup.children;
+      const lineMat = new THREE.LineBasicMaterial({ color: 0x7c3aed, transparent: true, opacity: 0.14, linewidth: 1 });
+      for (let i = 0; i < neuronMeshes.length; i++) {
+        for (let j = i + 1; j < neuronMeshes.length; j++) {
+          if (Math.random() < 0.04) {
+            const p1 = neuronMeshes[i].position;
+            const p2 = neuronMeshes[j].position;
+            const geom = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+            const line = new THREE.Line(geom, lineMat.clone());
+            connections.add(line);
+          }
+        }
+      }
+
+      // simple user interaction: drag to rotate, wheel to zoom
+      let isPointerDown = false, lastX = 0, lastY = 0;
+      const targetRotation = { x: 0, y: 0 };
+      const rotationVelocity = { x: 0, y: 0 };
+
+      function onPointerDown(e) {
+        isPointerDown = true;
+        lastX = e.clientX || e.touches?.[0]?.clientX;
+        lastY = e.clientY || e.touches?.[0]?.clientY;
+      }
+      function onPointerMove(e) {
+        if (!isPointerDown) return;
+        const cx = e.clientX || e.touches?.[0]?.clientX;
+        const cy = e.clientY || e.touches?.[0]?.clientY;
+        const dx = (cx - lastX) * 0.005;
+        const dy = (cy - lastY) * 0.005;
+        rotationVelocity.y = dx;
+        rotationVelocity.x = dy;
+        lastX = cx; lastY = cy;
+      }
+      function onPointerUp() { isPointerDown = false; }
+
+      container.addEventListener('mousedown', onPointerDown);
+      container.addEventListener('touchstart', onPointerDown, { passive: true });
+      window.addEventListener('mousemove', onPointerMove);
+      container.addEventListener('touchmove', onPointerMove, { passive: true });
+      window.addEventListener('mouseup', onPointerUp);
+      window.addEventListener('touchend', onPointerUp);
+
+      // wheel zoom
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        camera.position.z += e.deltaY * 0.003;
+        camera.position.z = Math.max(3, Math.min(18, camera.position.z));
+      }, { passive: false });
+
+      // animation loop
+      function animate() {
+        requestAnimationFrame(animate);
+
+        // slowly damp velocity
+        targetRotation.y += rotationVelocity.y;
+        targetRotation.x += rotationVelocity.x;
+        rotationVelocity.x *= 0.92;
+        rotationVelocity.y *= 0.92;
+
+        // apply rotation to groups
+        const t = performance.now() * 0.001;
+        brain.rotation.y += 0.002 + Math.sin(t * 0.3) * 0.0005;
+        brain.rotation.x = targetRotation.x * 0.6;
+
+        neuronsGroup.rotation.y = targetRotation.y * 0.7;
+        neuronsGroup.rotation.x = targetRotation.x * 0.7;
+
+        // pulsate neurons
+        neuronsGroup.children.forEach((n, idx) => {
+          const seed = n.userData.seed || 0;
+          const pulse = 0.6 + Math.abs(Math.sin(t * 2 + seed)) * 0.9;
+          n.scale.setScalar(0.6 + pulse * 0.12);
+          // tweak emissive intensity
+          n.material.emissiveIntensity = 0.6 + Math.abs(Math.sin(t * 2 + seed)) * 0.9;
+        });
+
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      // resize handling
+      window.addEventListener('resize', () => {
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+      });
+    })();
+
+    // footer
+
+    const footer = document.querySelector("footer");
+    if (footer) {
+      footer.style.opacity = "0";
+      footer.style.transform = "translateY(40px)";
+
+      const observer = new IntersectionObserver(
+        ([entry]) => {
+          if (entry.isIntersecting) {
+            footer.style.transition = "all 0.8s ease";
+            footer.style.opacity = "1";
+            footer.style.transform = "translateY(0)";
+            observer.disconnect();
+          }
+        },
+        { threshold: 0.2 }
+      );
+
+      observer.observe(footer);
+    }
+
+    //  upload
+
+    function preprocessImage(img) {
+      // resize to 224x224
+      // normalize pixel values
+      // convert to grayscale tensor
+    }
+    fetch("/predict", {
+      method: "POST",
+      body: formData
+    })
+      .then(res => res.json())
+      .then(result => {
+        // label
+        // probabilities
+        // grad-cam image
+      });
+
+  </script>
+
+  <script>
+    /* ---------------------------
+        Footer 3D/Particle Background
+    --------------------------- */
+    const footerCanvas = document.getElementById('footer-bg');
+    const footerCtx = footerCanvas.getContext('2d');
+
+    function resizeFooterCanvas() {
+      footerCanvas.width = footerCanvas.offsetWidth;
+      footerCanvas.height = footerCanvas.offsetHeight;
+    }
+    resizeFooterCanvas();
+    window.addEventListener('resize', resizeFooterCanvas);
+
+    const footerParticles = Array.from({ length: 100 }).map(() => ({
+      x: Math.random() * footerCanvas.width,
+      y: Math.random() * footerCanvas.height,
+      r: Math.random() * 2 + 0.5,
+      vx: (Math.random() - 0.5) * 0.2,
+      vy: (Math.random() - 0.5) * 0.2,
+      hue: 180 + Math.random() * 120
+    }));
+
+    function drawFooterParticles() {
+      footerCtx.clearRect(0, 0, footerCanvas.width, footerCanvas.height);
+      footerParticles.forEach(p => {
+        p.x += p.vx; p.y += p.vy;
+        if (p.x < 0) p.x = footerCanvas.width;
+        if (p.x > footerCanvas.width) p.x = 0;
+        if (p.y < 0) p.y = footerCanvas.height;
+        if (p.y > footerCanvas.height) p.y = 0;
+
+        const g = footerCtx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.r * 6);
+        g.addColorStop(0, `hsla(${p.hue},80%,60%,0.15)`);
+        g.addColorStop(1, 'rgba(255,255,255,0)');
+        footerCtx.fillStyle = g;
+        footerCtx.beginPath();
+        footerCtx.arc(p.x, p.y, p.r * 4, 0, Math.PI * 2);
+        footerCtx.fill();
+      });
+      requestAnimationFrame(drawFooterParticles);
+    }
+    drawFooterParticles();
+  </script>
+
+
+</body>
+
+</html>
