@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Patient Report</title>
+<link rel="stylesheet" href="/static/style.css">
+
+<style>
+    /* Import Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+/* Reset & Base */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: 'Poppins', sans-serif;
+}
+
+body {
+    background: radial-gradient(circle at top, #020617, #000);
+    min-height: 100vh;
+    color: #e2e8f0;
+    padding: 2rem;
+}
+
+/* Neon Glass Card */
+.glass {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(25px);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow:
+        0 0 40px rgba(0, 255, 255, 0.15),
+        inset 0 0 30px rgba(0, 255, 255, 0.15);
+    border-radius: 1rem;
+    padding: 1.5rem;
+    animation: pulse 4s infinite;
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.4); }
+    50% { box-shadow: 0 0 45px rgba(0, 255, 255, 1); }
+    100% { box-shadow: 0 0 20px rgba(0, 255, 255, 0.4); }
+}
+
+/* Text Styles */
+h1 {
+    color: #67e8f9;
+    text-shadow: 0 0 25px rgba(103, 232, 249, 0.8);
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.glass p {
+    font-size: 1.05rem;
+    line-height: 1.7;
+}
+
+.glass b {
+    color: #67e8f9;
+}
+
+/* Neon Button */
+.btn-glow {
+    display: inline-block;
+    padding: 0.875rem 1.75rem;
+    border-radius: 0.875rem;
+    background: linear-gradient(135deg, #00f0ff, #00b3ff);
+    color: #001;
+    font-weight: 600;
+    text-decoration: none;
+    box-shadow:
+        0 0 20px rgba(0, 240, 255, 0.6),
+        inset 0 0 20px rgba(255, 255, 255, 0.4);
+    transition: 0.3s;
+    margin-top: 1.5rem;
+}
+
+.btn-glow:hover {
+    transform: scale(1.05);
+    box-shadow:
+        0 0 40px rgba(0, 240, 255, 1),
+        inset 0 0 40px rgba(255, 255, 255, 0.5);
+}
+
+/* Images */
+img {
+    border-radius: 1.25rem;
+    border: 2px solid rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.7);
+    transition: 0.4s;
+    width: 24rem; /* 96 * 0.25 rem per Tailwind default */
+}
+
+img:hover {
+    transform: scale(1.03);
+}
+
+/* Utility */
+.mt-6 {
+    margin-top: 1.5rem;
+}
+
+.rounded-xl {
+    border-radius: 1rem;
+}
+
+.space-y-2 > * + * {
+    margin-top: 0.5rem;
+}
+
+/* Centered image & button container */
+.report-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem; /* spacing between image and button */
+    margin-top: 2rem;
+}
+
+/* Image */
+.report-container img {
+    border-radius: 1.25rem;
+    border: 2px solid rgba(0, 240, 255, 0.5);
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.7);
+    transition: 0.4s;
+    width: 24rem;
+}
+
+.report-container img:hover {
+    transform: scale(1.03);
+}
+
+/* Neon-glow download button */
+.download-btn {
+    padding: 0.875rem 2rem;
+    border-radius: 1rem;
+    background: linear-gradient(135deg, #00f0ff, #00b3ff);
+    color: #001;
+    font-weight: 600;
+    text-decoration: none;
+    text-align: center;
+    box-shadow:
+        0 0 25px rgba(0, 240, 255, 0.7),
+        inset 0 0 15px rgba(255, 255, 255, 0.4);
+    transition: all 0.3s ease;
+}
+
+.download-btn:hover {
+    transform: scale(1.05);
+    box-shadow:
+        0 0 45px rgba(0, 240, 255, 1),
+        inset 0 0 20px rgba(255, 255, 255, 0.5);
+}
+/* Neon Text Link Button with Border Box */
+.text-link-btn {
+    display: inline-block;
+    margin-top: 1rem; /* same as mt-4 */
+    font-size: 0.875rem; /* small text */
+    color: #94a3b8; /* slate-400 equivalent */
+    text-decoration: none;
+    transition: all 0.3s ease;
+    position: relative;
+    padding: 0.5rem 1rem; /* space inside the box */
+    border: 2px solid #94a3b8; /* initial border color */
+    border-radius: 0.5rem; /* rounded corners */
+    box-shadow: 0 0 5px #94a3b8; /* subtle glow initially */
+}
+
+/* Neon underline effect on hover */
+.text-link-btn::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: -2px;
+    left: 0;
+    background: #00f0ff; /* neon cyan */
+    transition: width 0.3s ease;
+}
+
+.text-link-btn:hover {
+    color: #00f0ff; /* neon cyan */
+    border-color: #00f0ff; /* neon border */
+    box-shadow: 0 0 10px #00f0ff, 0 0 20px #00f0ff; /* glowing effect */
+}
+
+.text-link-btn:hover::after {
+    width: 100%;
+}
+
+
+</style>
+</head>
+<body class="bg-black text-white p-8">
+
+<h1 class="text-3xl font-bold mb-4">MRI Report</h1>
+
+<div class="glass p-6 rounded-xl space-y-2">
+<p><b>Patient:</b> {{ report.patient_name }}</p>
+<p><b>MRI ID:</b> {{ report.mri_id }}</p>
+<p><b>Diagnosis:</b> {{ report.prediction }}</p>
+<p><b>Confidence:</b> {{ report.confidence }}%</p>
+<p><b>Severity:</b> {{ report.severity }}</p>
+<p><b>Explanation:</b> {{ report.explanation }}</p>
+</div>
+
+<div class="report-container">
+    <img src="/static/{{ report.report_file }}" alt="MRI Report">
+    <a href="/download_report" class="download-btn">Download PDF</a>
+    <a href="/auth" class="text-link-btn">Back to Account</a>
+
+</div>
+
+</body>
+</html>

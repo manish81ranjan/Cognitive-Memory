@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Hospital Admin Reports</title>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+
+<style>
+    body {
+        background: #020b14;
+        color: #0ff;
+        font-family: Segoe UI;
+        padding: 30px
+    }
+
+    .title {
+        text-align: center;
+        font-size: 28px;
+        margin-bottom: 20px
+    }
+
+    .glass-table {
+        width: 100%;
+        border-collapse: collapse;
+        background: rgba(0, 0, 0, .4);
+        backdrop-filter: blur(10px)
+    }
+
+    .glass-table th,
+    .glass-table td {
+        padding: 12px;
+        border-bottom: 1px solid #0ff;
+        text-align: center
+    }
+
+    .btn-glow {
+        background: #00ffee;
+        color: black;
+        padding: 6px 14px;
+        border-radius: 8px;
+        text-decoration: none
+    }
+
+    .btn-danger {
+        background: #ff0040;
+        color: white;
+        padding: 6px 14px;
+        border-radius: 8px;
+        text-decoration: none
+    }
+
+    .btn-outline {
+        border: 1px solid cyan;
+        color: cyan;
+        padding: 10px 18px;
+        border-radius: 10px;
+        text-decoration: none;
+        display: inline-block;
+        margin-top: 20px
+    }
+</style>
+
+<body>
+
+    <h1 class="title">🧠 Hospital MRI Reports</h1>
+
+    <table class="glass-table">
+        <tr>
+            <th>ID</th>
+            <th>Patient</th>
+            <th>MRI ID</th>
+            <th>Diagnosis</th>
+            <th>Confidence</th>
+            <th>Severity</th>
+            <th>Report</th>
+            <th>Action</th>
+        </tr>
+
+        {% for r in reports %}
+        <tr>
+            <td>{{r[0]}}</td>
+            <td>{{r[1]}}</td>
+            <td>{{r[2]}}</td>
+            <td>{{r[3]}}</td>
+            <td>{{r[4]}}%</td>
+            <td>{{r[5]}}</td>
+            <td><a class="btn-glow" href="/static/{{r[7]}}" target="_blank">View</a></td>
+            <td><a class="btn-danger" href="/delete-report/{{r[0]}}">Delete</a></td>
+            <td>
+                <a class="btn-glow" href="/admin-download/{{r[7]}}">Download</a>
+            </td>
+
+        </tr>
+        {% endfor %}
+    </table>
+
+    <a href="/admin-dashboard" class="btn-outline">⬅ Back</a>
+
+</body>
+
+</html>

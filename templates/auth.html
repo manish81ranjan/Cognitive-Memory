@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>My Account • DEMNET</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900
+             text-white min-h-screen flex items-center justify-center">
+
+  <!-- RESPONSIVE WRAPPER (ADD THIS) -->
+  <div class="w-full max-w-lg sm:max-w-md md:max-w-lg px-4">
+
+    <!-- CARD -->
+    <div class="bg-slate-800/70 backdrop-blur-xl
+                p-6 sm:p-8
+                rounded-2xl shadow-xl
+                w-full
+                border border-slate-700">
+
+      <!-- Avatar -->
+      <div class="flex flex-col items-center mb-6">
+        <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-full
+                    bg-gradient-to-br from-indigo-500 to-teal-400
+                    flex items-center justify-center
+                    text-xl sm:text-2xl font-bold shadow-lg">
+          {{ name[0] if name else "G"}}
+        </div>
+
+        <h2 class="text-lg sm:text-xl font-bold mt-3">{{ name }}</h2>
+        <p class="text-xs sm:text-sm text-slate-400">Active Account</p>
+      </div>
+
+      <!-- Info -->
+      <div class="space-y-4 text-xs sm:text-sm">
+        <div class="flex justify-between gap-4">
+          <span class="text-slate-400">Email</span>
+          <span class="truncate text-right">{{ email }}</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="text-slate-400">Role</span>
+          <span>User</span>
+        </div>
+
+        <div class="flex justify-between">
+          <span class="text-slate-400">Joined</span>
+          <span>Recently</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <a href="/" class="py-2 rounded-lg bg-teal-500/20 text-teal-300
+                  text-center hover:bg-teal-500/30 transition">
+          Dashboard
+        </a>
+
+        <a href="/logout" class="py-2 rounded-lg bg-red-500/20 text-red-400
+                  text-center hover:bg-red-500/30 transition">
+          Logout
+        </a>
+      </div>
+
+      <!-- Future -->
+      <!-- Upcoming Features -->
+      <div class="mt-6 border-t border-slate-700 pt-4 text-slate-400 text-center sm:text-left text-xs sm:text-sm">
+        <span class="font-semibold">More Feature:</span>
+        <div class="mt-2 flex flex-wrap justify-center sm:justify-start gap-2">
+          <!-- Change Password -->
+          <a href="/change-password"
+            class="px-3 py-1 rounded-full bg-indigo-600/50 hover:bg-indigo-600/70 transition text-white text-xs sm:text-sm">
+            🔒 Change Password
+          </a>
+
+          <!-- MRI Upload History -->
+          <a href="/mri-history"
+            class="px-3 py-1 rounded-full bg-teal-600/50 hover:bg-teal-600/70 transition text-white text-xs sm:text-sm">
+            🖼️ MRI Upload History
+          </a>
+        </div>
+      </div>
+
+
+      <!-- Overlay -->
+      <div id="modalOverlay" class="fixed inset-0 bg-black/50 hidden items-center justify-center z-50">
+        <!-- Modal -->
+        <div class="bg-slate-800/90 rounded-2xl p-6 w-full max-w-md relative">
+          <button id="modalClose" class="absolute top-3 right-3 text-slate-400 hover:text-white">&times;</button>
+          <div id="modalContent">
+            <!-- Dynamic modal content will be inserted here -->
+          </div>
+        </div>
+      </div>
+
+
+    </div>
+  </div>
+
+  <script>
+    const modalOverlay = document.getElementById("modalOverlay");
+    const modalContent = document.getElementById("modalContent");
+    const modalClose = document.getElementById("modalClose");
+
+    const changePasswordBtn = document.getElementById("changePasswordBtn");
+    const mriHistoryBtn = document.getElementById("mriHistoryBtn");
+
+    // Modal close function
+    modalClose.addEventListener("click", () => {
+      modalOverlay.classList.add("hidden");
+      modalContent.innerHTML = "";
+    });
+
+    // Change Password Modal
+    changePasswordBtn.addEventListener("click", () => {
+      modalContent.innerHTML = `
+      <h2 class="text-xl font-bold mb-4 text-white">Change Password</h2>
+      <form id="changePasswordForm" class="space-y-4">
+        <input type="password" name="old_password" placeholder="Old Password" class="w-full p-2 rounded-lg bg-slate-700/50 border border-slate-600" required>
+        <input type="password" name="new_password" placeholder="New Password" class="w-full p-2 rounded-lg bg-slate-700/50 border border-slate-600" required>
+        <input type="password" name="confirm_password" placeholder="Confirm Password" class="w-full p-2 rounded-lg bg-slate-700/50 border border-slate-600" required>
+        <button type="submit" class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 transition text-white">Update Password</button>
+      </form>
+    `;
+      modalOverlay.classList.remove("hidden");
+
+      // Handle form submission
+      document.getElementById("changePasswordForm").addEventListener("submit", (e) => {
+        e.preventDefault();
+        alert("Password updated successfully!"); // Replace with AJAX/Flask call
+        modalOverlay.classList.add("hidden");
+      });
+    });
+
+    // MRI History Modal
+    mriHistoryBtn.addEventListener("click", () => {
+      modalContent.innerHTML = `
+      <h2 class="text-xl font-bold mb-4 text-white">MRI Upload History</h2>
+      <ul class="space-y-2 text-sm text-slate-300 max-h-64 overflow-y-auto">
+        <li class="p-2 rounded-lg bg-slate-700/50">2025-12-25 • Brain MRI • <a href="#" class="text-teal-400 hover:underline">View</a></li>
+        <li class="p-2 rounded-lg bg-slate-700/50">2025-12-28 • Spine MRI • <a href="#" class="text-teal-400 hover:underline">View</a></li>
+        <li class="p-2 rounded-lg bg-slate-700/50">2025-12-29 • Knee MRI • <a href="#" class="text-teal-400 hover:underline">View</a></li>
+      </ul>
+    `;
+      modalOverlay.classList.remove("hidden");
+    });
+  </script>
+
+
+</body>
+
+</html>

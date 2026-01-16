@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Hospital Analytics</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/static/admin.css">
+</head>
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', sans-serif;
+        background: radial-gradient(circle at top, #020617, #000);
+        color: #e2e8f0;
+        min-height: 100vh;
+        padding: 15px; /* Added for mobile breathing room */
+    }
+
+    .title {
+        text-align: center;
+        font-size: clamp(24px, 6vw, 32px); /* Responsive font size */
+        color: #22d3ee;
+        margin: 25px 0;
+        text-shadow: 0 0 20px #22d3ee;
+    }
+
+    /* Adjusted glass container for responsiveness */
+    .glass {
+        width: 95%; 
+        max-width: 1200px;
+        margin: 20px auto;
+        background: rgba(255, 255, 255, 0.08);
+        backdrop-filter: blur(20px);
+        border-radius: 22px;
+        padding: clamp(15px, 4vw, 30px);
+        box-shadow: 0 0 60px rgba(34, 211, 238, 0.25);
+        border: 1px solid rgba(34, 211, 238, 0.3);
+        box-sizing: border-box;
+    }
+
+    /* Grid: 1 column on mobile, 2 columns on desktop */
+    .analytics-grid {
+        display: grid;
+        grid-template-columns: 1fr; 
+        gap: 25px;
+        margin-top: 30px;
+    }
+
+    @media (min-width: 992px) {
+        .analytics-grid {
+            grid-template-columns: 2fr 1fr;
+        }
+    }
+
+    .analytics-card {
+        background: rgba(0, 0, 0, 0.4);
+        padding: 25px;
+        border-radius: 20px;
+        box-shadow: 0 0 40px rgba(34, 211, 238, 0.35);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .analytics-card h3 {
+        color: #22d3ee;
+        margin-bottom: 20px;
+        text-align: center;
+        font-size: 1.2rem;
+    }
+
+    /* Fixed Chart Sizing */
+    #accChart {
+        width: 100% !important;
+        height: auto !important;
+        min-height: 250px;
+    }
+
+    .donut-wrap {
+        width: 100%;
+        max-width: 280px; /* Limits size on desktop */
+        aspect-ratio: 1 / 1;
+        margin: auto;
+    }
+
+    #distChart {
+        width: 100% !important;
+        height: 100% !important;
+    }
+
+    /* Buttons */
+    .btn-outline {
+        display: block;
+        width: 100%;
+        max-width: 200px;
+        margin: 30px auto;
+        padding: 12px;
+        text-align: center;
+        border-radius: 12px;
+        border: 1px solid #22d3ee;
+        color: #22d3ee;
+        text-decoration: none;
+        transition: 0.3s;
+        font-weight: bold;
+    }
+
+    .btn-outline:hover {
+        background: #22d3ee;
+        color: #020617;
+        box-shadow: 0 0 20px #22d3ee;
+    }
+</style>
+
+<body>
+
+    <h1 class="title">📊 Hospital AI Analytics</h1>
+
+    <div class="analytics-grid">
+        <div class="analytics-card">
+            <h3>Model Accuracy Trend</h3>
+            <canvas id="accChart"></canvas>
+        </div>
+
+        <div class="analytics-card">
+            <h3>Prediction Distribution</h3>
+            <div class="donut-wrap">
+                <canvas id="distChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+
+            fetch("/admin-stats")
+                .then(res => res.json())
+                .then(data => {
+
+                    new Chart(document.getElementById("accChart"), {
+                        type: "line",
+                        data: {
+                            labels: data.map((_, i) => i + 1),
+                            datasets: [{
+                                label: "Model Accuracy (%)",
+                                data: data,
+                                borderColor: "#22d3ee",
+                                backgroundColor: "rgba(34,211,238,0.2)",
+                                borderWidth: 3,
+                                pointRadius: 5,
+                                pointBackgroundColor: "#22d3ee",
+                                tension: 0.4,
+                                fill: true
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    labels: { color: "#22d3ee", font: { size: 14 } }
+                                }
+                            },
+                            scales: {
+                                x: {
+                                    ticks: { color: "#67e8f9" },
+                                    grid: { color: "rgba(34,211,238,0.1)" }
+                                },
+                                y: {
+                                    min: 60,
+                                    max: 100,
+                                    ticks: { color: "#67e8f9" },
+                                    grid: { color: "rgba(34,211,238,0.15)" }
+                                }
+                            }
+                        }
+                    });
+
+                });
+        });
+
+
+        fetch("/admin-distribution")
+            .then(res => res.json())
+            .then(dist => {
+
+                new Chart(document.getElementById("distChart"), {
+                    type: "doughnut",
+                    data: {
+                        labels: Object.keys(dist),
+                        datasets: [{
+                            data: Object.values(dist),
+                            backgroundColor: ["#22d3ee", "#0ea5e9", "#38bdf8"]
+                        }]
+                    },
+                    options: {
+                        responsive: false,   // CRITICAL FIX
+                        cutout: "70%",
+                        plugins: {
+                            legend: {
+                                labels: { color: "#67e8f9" },
+                                position: "bottom"
+                            }
+                        }
+                    }
+                });
+
+            });
+
+    </script>
+
+
+
+
+    <a href="/admin-dashboard" class="btn-outline">⬅ Back</a>
+
+</body>
+
+</html>
